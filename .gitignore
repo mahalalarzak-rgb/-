@@ -1,0 +1,4 @@
+# Logs & IDE
+.gemini/
+*.zip
+github_config.json
