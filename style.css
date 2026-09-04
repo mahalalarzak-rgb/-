@@ -253,7 +253,7 @@ h2 i {
     position: relative;
     overflow: hidden;
     animation: popIn 0.4s ease-out backwards;
-    cursor: default;
+    cursor: pointer;
 }
 
 /* الدائرة الزخرفية خلف الكلام — z-index: 0 */
