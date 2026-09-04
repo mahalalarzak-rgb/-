@@ -805,11 +805,32 @@ chatInput.addEventListener('keypress', (e) => {
 const micBtn = document.getElementById('mic-btn');
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-if (SpeechRecognition) {
+// كشف نوع الجهاز والمتصفح
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isChromeOnIOS = isIOS && /CriOS/.test(navigator.userAgent);
+const isFirefoxOnIOS = isIOS && /FxiOS/.test(navigator.userAgent);
+
+// على Chrome/Firefox للآيفون — مايك مش متاح
+if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
+    micBtn.title = 'المايك لا يعمل على Chrome/Firefox للآيفون — استخدم Safari';
+    micBtn.style.opacity = '0.4';
+    micBtn.addEventListener('click', () => {
+        if (chatbotBody.classList.contains('hidden')) {
+            chatbotBody.classList.remove('hidden');
+        }
+        addMessage(
+            '🍎 على الآيفون، المايكروفون يعمل فقط مع متصفح Safari.\n\n' +
+            'الحل: افتح الموقع في Safari وليس Chrome أو Firefox.',
+            false
+        );
+    });
+} else if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
-    recognition.lang = 'ar-EG';
+    // ar-SA أفضل على iOS Safari، ar-EG على Android
+    recognition.lang = isIOS ? 'ar-SA' : 'ar-EG';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = false; // iOS Safari لا يدعم continuous
     let isRecognitionActive = false;
 
     recognition.onstart = function() {
