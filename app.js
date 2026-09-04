@@ -567,6 +567,65 @@ function findProduct(text, productsList) {
 }
 
 // ===========================================
+// استخراج الأرقام العربية الهندية والكلمات المكتوبة باللغة العربية
+// ===========================================
+function parseArabicNumbers(text) {
+    if (!text) return [];
+
+    // 1. تحويل الأرقام المشرقية (٠١٢٣٤٥٦٧٨٩) إلى (0123456789)
+    let str = text
+        .replace(/٠/g, '0')
+        .replace(/١/g, '1')
+        .replace(/٢/g, '2')
+        .replace(/٣/g, '3')
+        .replace(/٤/g, '4')
+        .replace(/٥/g, '5')
+        .replace(/٦/g, '6')
+        .replace(/٧/g, '7')
+        .replace(/٨/g, '8')
+        .replace(/٩/g, '9');
+
+    // 2. تحويل الكلمات المنطوقة إلى أرقام
+    const wordMap = [
+        { regex: /(?:^|\s)(?:خمسمية|خمسمائة)(?:\s|$)/gi, val: ' 500 ' },
+        { regex: /(?:^|\s)(?:اربعمية|أربعمائة)(?:\s|$)/gi, val: ' 400 ' },
+        { regex: /(?:^|\s)(?:تلاتمية|ثلاثمائة)(?:\s|$)/gi, val: ' 300 ' },
+        { regex: /(?:^|\s)(?:ميتين|مئتان|مائتان)(?:\s|$)/gi, val: ' 200 ' },
+        { regex: /(?:^|\s)(?:مية|مائة|ميـة)(?:\s|$)/gi, val: ' 100 ' },
+        { regex: /(?:^|\s)(?:تسعين|تسعون)(?:\s|$)/gi, val: ' 90 ' },
+        { regex: /(?:^|\s)(?:تمانين|ثمانين)(?:\s|$)/gi, val: ' 80 ' },
+        { regex: /(?:^|\s)(?:سبعين|سبعون)(?:\s|$)/gi, val: ' 70 ' },
+        { regex: /(?:^|\s)(?:ستين|ستون)(?:\s|$)/gi, val: ' 60 ' },
+        { regex: /(?:^|\s)(?:خمسين|خمسون)(?:\s|$)/gi, val: ' 50 ' },
+        { regex: /(?:^|\s)(?:اربعين|أربعين)(?:\s|$)/gi, val: ' 40 ' },
+        { regex: /(?:^|\s)(?:تلاتين|ثلاثين)(?:\s|$)/gi, val: ' 30 ' },
+        { regex: /(?:^|\s)(?:عشرين|عشرون)(?:\s|$)/gi, val: ' 20 ' },
+        { regex: /(?:^|\s)(?:خمستاشر|خمسة عشر)(?:\s|$)/gi, val: ' 15 ' },
+        { regex: /(?:^|\s)(?:اربعطاشر|اربعتاشر|أربعة عشر)(?:\s|$)/gi, val: ' 14 ' },
+        { regex: /(?:^|\s)(?:تلاتطاشر|تلاتاشر|ثلاثة عشر)(?:\s|$)/gi, val: ' 13 ' },
+        { regex: /(?:^|\s)(?:اتناشر|اثنا عشر)(?:\s|$)/gi, val: ' 12 ' },
+        { regex: /(?:^|\s)(?:حداشر|أحد عشر)(?:\s|$)/gi, val: ' 11 ' },
+        { regex: /(?:^|\s)(?:عشرة|عشر)(?:\s|$)/gi, val: ' 10 ' },
+        { regex: /(?:^|\s)(?:تسعة|تسع)(?:\s|$)/gi, val: ' 9 ' },
+        { regex: /(?:^|\s)(?:ثمانية|تمانية|تمان)(?:\s|$)/gi, val: ' 8 ' },
+        { regex: /(?:^|\s)(?:سبعة|سبع)(?:\s|$)/gi, val: ' 7 ' },
+        { regex: /(?:^|\s)(?:ستة|ست)(?:\s|$)/gi, val: ' 6 ' },
+        { regex: /(?:^|\s)(?:خمسة|خمس)(?:\s|$)/gi, val: ' 5 ' },
+        { regex: /(?:^|\s)(?:اربعة|أربعة|اربع)(?:\s|$)/gi, val: ' 4 ' },
+        { regex: /(?:^|\s)(?:تلاتة|ثلاثة|تلات)(?:\s|$)/gi, val: ' 3 ' },
+        { regex: /(?:^|\s)(?:اتنين|اثنين|جوز)(?:\s|$)/gi, val: ' 2 ' },
+        { regex: /(?:^|\s)(?:واحد|واحدة|حبة|قطعة)(?:\s|$)/gi, val: ' 1 ' }
+    ];
+
+    wordMap.forEach(w => {
+        str = str.replace(w.regex, w.val);
+    });
+
+    const matches = str.match(/\d+/g);
+    return matches ? matches.map(n => parseInt(n)) : [];
+}
+
+// ===========================================
 // محرك فهم الأوامر الذكي (NLP Intent Engine)
 // ===========================================
 function processAssistantCommand(text) {
@@ -594,13 +653,14 @@ function processAssistantCommand(text) {
         let foundPrice = null;
         let foundTarget = 10;
 
-        const numbers = text.match(/\d+/g);
+        const numbers = parseArabicNumbers(text);
         if (numbers && numbers.length > 0) {
-            foundQty = parseInt(numbers[0]);
+            foundQty = numbers[0];
             if (numbers.length > 1) {
-                foundPrice = parseInt(numbers[1]);
+                foundPrice = numbers[1];
             }
             rawName = rawName.replace(/\d+/g, '')
+                             .replace(/[٠١٢٣٤٥٦٧٨٩]/g, '')
                              .replace(/كميه|كمية|بكمية|بكميه|عدد|قطع|قطعه|سعر|بسعر|جنيه|جنيها|حته|حبات/g, '')
                              .replace(/(?:^|\s+)(?:اسمه|اسمها|اسم)(?:\s+|$)/gi, ' ')
                              .trim();
@@ -630,8 +690,8 @@ function processAssistantCommand(text) {
     let usedMemory = false;
 
     // استخراج الأرقام
-    const numbers = text.match(/\d+/g);
-    const amount = numbers ? parseInt(numbers[0]) : null;
+    const numbers = parseArabicNumbers(text);
+    const amount = numbers && numbers.length > 0 ? numbers[0] : null;
 
     // ------------------------------------------
     // INTENT: تحية ومساعدة
@@ -1016,32 +1076,25 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
     };
 
     recognition.onresult = function(event) {
-        let interimTranscript = '';
-        let finalTranscript = '';
+        if (!event.results || event.results.length === 0) return;
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            const textSegment = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += textSegment;
-            } else {
-                interimTranscript += textSegment;
+        const lastIndex = event.results.length - 1;
+        const currentResult = event.results[lastIndex];
+        const textSegment = currentResult[0].transcript.trim();
+
+        if (currentResult.isFinal) {
+            if (textSegment && textSegment !== lastProcessedText) {
+                lastProcessedText = textSegment;
+                chatInput.value = textSegment;
+                processAssistantCommand(textSegment);
+                setTimeout(() => {
+                    if (chatInput) chatInput.value = '';
+                }, 100);
             }
-        }
-
-        // إظهار النص فوراً أثناء الحديث
-        if (interimTranscript) {
-            chatInput.value = interimTranscript;
-        }
-
-        // عند اكتمال الجملة
-        const cleanFinal = finalTranscript.trim();
-        if (cleanFinal && cleanFinal !== lastProcessedText) {
-            lastProcessedText = cleanFinal;
-            chatInput.value = cleanFinal;
-            processAssistantCommand(cleanFinal);
-            setTimeout(() => {
-                if (chatInput) chatInput.value = '';
-            }, 100);
+        } else {
+            if (textSegment) {
+                chatInput.value = textSegment;
+            }
         }
     };
 
