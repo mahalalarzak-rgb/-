@@ -1,20 +1,20 @@
 :root {
-    /* ثيم احترافي - أسود ذهبي مع تأثيرات متطورة */
-    --primary-dark: #0d0d0d;
-    --primary-color: #f5a623;
-    --primary-hover: #e09010;
-    --gold-light: #ffd700;
+    /* ثيم أزرق بترولي وبيج - هادي وعصري */
+    --primary-dark: #0f3d3e;
+    --primary-color: #2a9d8f;
+    --primary-hover: #21867a;
+    --gold-light: #e9c46a;
     --secondary-color: #ffffff;
-    --text-color: #1a1a2e;
-    --border-color: #e2e8f0;
-    --success-color: #10b981;
-    --danger-color: #ef4444;
-    --warning-color: #f59e0b;
-    --bg-color: #f0f2f5;
+    --text-color: #1a2e2e;
+    --border-color: #d4e6e1;
+    --success-color: #2a9d8f;
+    --danger-color: #e76f51;
+    --warning-color: #e9c46a;
+    --bg-color: #f4f8f7;
     --card-bg: #ffffff;
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-    --shadow-md: 0 8px 24px rgba(0,0,0,0.12);
-    --shadow-lg: 0 20px 60px rgba(0,0,0,0.18);
+    --shadow-sm: 0 2px 8px rgba(15,61,62,0.08);
+    --shadow-md: 0 8px 24px rgba(15,61,62,0.12);
+    --shadow-lg: 0 20px 60px rgba(15,61,62,0.18);
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 20px;
@@ -30,8 +30,8 @@
 body {
     background-color: var(--bg-color);
     background-image: 
-        radial-gradient(circle at 20% 20%, rgba(245,166,35,0.04) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(13,13,13,0.04) 0%, transparent 50%);
+        radial-gradient(circle at 20% 20%, rgba(42,157,143,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(15,61,62,0.05) 0%, transparent 50%);
     color: var(--text-color);
     padding-bottom: 80px;
     overflow-x: hidden;
@@ -55,9 +55,9 @@ body {
     100% { background-position: 0% 50%; }
 }
 @keyframes floatAndGlow {
-    0% { transform: translateY(0px) rotate(0deg); filter: drop-shadow(0 0 12px rgba(245, 166, 35, 0.5)); }
-    50% { transform: translateY(-10px) rotate(2deg); filter: drop-shadow(0 0 28px rgba(245, 166, 35, 0.9)); }
-    100% { transform: translateY(0px) rotate(0deg); filter: drop-shadow(0 0 12px rgba(245, 166, 35, 0.5)); }
+    0% { transform: translateY(0px) rotate(0deg); filter: drop-shadow(0 0 12px rgba(42,157,143,0.5)); }
+    50% { transform: translateY(-10px) rotate(2deg); filter: drop-shadow(0 0 28px rgba(42,157,143,0.85)); }
+    100% { transform: translateY(0px) rotate(0deg); filter: drop-shadow(0 0 12px rgba(42,157,143,0.5)); }
 }
 @keyframes shineText {
     to { background-position: 200% center; }
@@ -75,13 +75,13 @@ body {
    HEADER
 =========================================== */
 header {
-    background: linear-gradient(135deg, #080808 0%, #1a1a1a 40%, #141414 70%, #0a0a0a 100%);
+    background: linear-gradient(135deg, #0a2e2e 0%, #0f3d3e 40%, #0d3535 70%, #082828 100%);
     background-size: 300% 300%;
     animation: gradientFlow 12s ease infinite;
     padding: 1.4rem 2rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 2px 0 rgba(245,166,35,0.3);
+    box-shadow: 0 8px 32px rgba(15,61,62,0.5), 0 2px 0 rgba(42,157,143,0.3);
     position: relative;
-    border-bottom: 1px solid rgba(245, 166, 35, 0.15);
+    border-bottom: 1px solid rgba(42, 157, 143, 0.2);
 }
 
 /* شريط الليزر العلوي */
@@ -90,7 +90,7 @@ header::before {
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 4px;
-    background: linear-gradient(90deg, transparent, #f5a623, #ffd700, #f5a623, transparent);
+    background: linear-gradient(90deg, transparent, #2a9d8f, #e9c46a, #2a9d8f, transparent);
     background-size: 300% 100%;
     animation: gradientFlow 3s linear infinite;
 }
@@ -101,7 +101,7 @@ header::after {
     position: absolute;
     bottom: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(245,166,35,0.6), transparent);
+    background: linear-gradient(90deg, transparent, rgba(42,157,143,0.5), transparent);
 }
 
 .header-content {
@@ -115,7 +115,7 @@ header::after {
 header h1 {
     font-weight: 900;
     font-size: 2rem;
-    background: linear-gradient(90deg, #f5a623 0%, #ffd700 30%, #ffffff 50%, #f5a623 70%, #ffd700 100%);
+    background: linear-gradient(90deg, #e9c46a 0%, #2a9d8f 30%, #ffffff 50%, #e9c46a 70%, #2a9d8f 100%);
     background-size: 200% auto;
     color: transparent;
     -webkit-background-clip: text;
@@ -134,7 +134,7 @@ header h1 {
 .logo-img:hover {
     transform: scale(1.12) rotate(-5deg);
     animation: none;
-    filter: drop-shadow(0 0 40px rgba(245, 166, 35, 1));
+    filter: drop-shadow(0 0 40px rgba(42, 157, 143, 0.9));
 }
 
 /* Navigation */
@@ -146,9 +146,9 @@ nav {
 }
 
 .tab-btn {
-    background: rgba(255,255,255,0.06);
-    color: #cccccc;
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.08);
+    color: #cce8e5;
+    border: 1px solid rgba(42,157,143,0.25);
     padding: 9px 22px;
     border-radius: 50px;
     cursor: pointer;
@@ -163,7 +163,7 @@ nav {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, #f5a623, #ffd700);
+    background: linear-gradient(135deg, #2a9d8f, #e9c46a);
     opacity: 0;
     transition: opacity 0.3s ease;
     border-radius: inherit;
@@ -173,18 +173,18 @@ nav {
 
 .tab-btn i {
     margin-left: 8px;
-    color: #888;
+    color: #7ec8c2;
     transition: color 0.3s ease;
 }
 
 .tab-btn:hover::before, .tab-btn.active::before { opacity: 1; }
 .tab-btn:hover, .tab-btn.active {
-    color: #111;
+    color: #0f3d3e;
     border-color: transparent;
-    box-shadow: 0 4px 16px rgba(245, 166, 35, 0.4);
+    box-shadow: 0 4px 16px rgba(42,157,143,0.4);
     transform: translateY(-2px);
 }
-.tab-btn:hover i, .tab-btn.active i { color: #111; }
+.tab-btn:hover i, .tab-btn.active i { color: #0f3d3e; }
 
 /* ===========================================
    MAIN CONTENT
@@ -272,32 +272,33 @@ h2 i {
 
 /* كارت الإجمالي */
 .stat-card:nth-child(1) {
-    background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
-    box-shadow: 0 8px 24px rgba(13,13,13,0.3);
+    background: linear-gradient(135deg, #0f3d3e 0%, #1a5657 100%);
+    box-shadow: 0 8px 24px rgba(15,61,62,0.3);
 }
-.stat-card:nth-child(1) h3 { color: #aaaaaa; }
-.stat-card:nth-child(1) p, .stat-card:nth-child(1) .stat-icon { color: var(--primary-color); }
+.stat-card:nth-child(1) h3 { color: #a8d5d1; }
+.stat-card:nth-child(1) p, .stat-card:nth-child(1) .stat-icon { color: #e9c46a; }
 
 /* كارت المتوفر */
 .stat-card:nth-child(2) {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    box-shadow: 0 8px 24px rgba(16,185,129,0.3);
+    background: linear-gradient(135deg, #1a7a6e 0%, #2a9d8f 100%);
+    box-shadow: 0 8px 24px rgba(42,157,143,0.3);
 }
 .stat-card:nth-child(2) h3, .stat-card:nth-child(2) p, .stat-card:nth-child(2) .stat-icon { color: #ffffff; }
 
 /* كارت الناقص */
 .stat-card:nth-child(3) {
-    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-    box-shadow: 0 8px 24px rgba(239,68,68,0.3);
+    background: linear-gradient(135deg, #c1440e 0%, #e76f51 100%);
+    box-shadow: 0 8px 24px rgba(231,111,81,0.3);
 }
 .stat-card:nth-child(3) h3, .stat-card:nth-child(3) p, .stat-card:nth-child(3) .stat-icon { color: #ffffff; }
 
 /* كارت القيمة */
 .stat-card:nth-child(4) {
-    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-    box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+    background: linear-gradient(135deg, #c48a1e 0%, #e9c46a 100%);
+    box-shadow: 0 8px 24px rgba(233,196,106,0.35);
 }
-.stat-card:nth-child(4) h3, .stat-card:nth-child(4) p, .stat-card:nth-child(4) .stat-icon { color: #ffffff; }
+.stat-card:nth-child(4) h3 { color: #5a3b00; }
+.stat-card:nth-child(4) p, .stat-card:nth-child(4) .stat-icon { color: #3d2600; }
 
 .stat-card:hover {
     transform: translateY(-6px);
@@ -427,8 +428,8 @@ th, td {
 }
 
 th {
-    background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
-    color: var(--primary-color);
+    background: linear-gradient(135deg, #0f3d3e, #1a5657);
+    color: #e9c46a;
     font-size: 0.95rem;
     font-weight: 700;
     letter-spacing: 0.3px;
@@ -438,7 +439,7 @@ tbody tr {
     transition: all 0.2s ease;
 }
 tbody tr:hover {
-    background: linear-gradient(135deg, #fffdf0, #fff8e7);
+    background: linear-gradient(135deg, #f0faf8, #e6f5f3);
 }
 tbody tr:last-child td { border-bottom: none; }
 
@@ -451,9 +452,9 @@ tbody tr:last-child td { border-bottom: none; }
     align-items: center;
     gap: 5px;
 }
-.status-available { background: #d1fae5; color: #065f46; }
-.status-warning { background: #fef3c7; color: #92400e; }
-.status-empty { background: #fee2e2; color: #991b1b; }
+.status-available { background: #ccf0eb; color: #0d5c52; }
+.status-warning { background: #fdf3d0; color: #7a5200; }
+.status-empty { background: #fde8e0; color: #9c2d0f; }
 
 .action-btn {
     background: none;
@@ -473,8 +474,8 @@ tbody tr:last-child td { border-bottom: none; }
 .action-btn:hover {
     transform: scale(1.15);
 }
-.btn-edit:hover { color: #1d4ed8; background: #eff6ff; }
-.btn-delete:hover { color: var(--danger-color); background: #fef2f2; }
+.btn-edit:hover { color: #0f3d3e; background: #e0f5f2; }
+.btn-delete:hover { color: var(--danger-color); background: #fef0eb; }
 
 /* ===========================================
    FORMS
@@ -523,8 +524,8 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .submit-btn {
-    background: linear-gradient(135deg, #f5a623, #ffd700);
-    color: #111;
+    background: linear-gradient(135deg, #2a9d8f, #1a7a6e);
+    color: #ffffff;
     font-weight: 800;
     border: none;
     padding: 13px 20px;
@@ -535,16 +536,16 @@ tbody tr:last-child td { border-bottom: none; }
     transition: all 0.3s ease;
     font-family: 'Cairo', sans-serif;
     margin-top: 4px;
-    box-shadow: 0 4px 12px rgba(245,166,35,0.3);
+    box-shadow: 0 4px 12px rgba(42,157,143,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
 }
 .submit-btn:hover {
-    background: linear-gradient(135deg, #e09010, #f5a623);
+    background: linear-gradient(135deg, #21867a, #2a9d8f);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(245,166,35,0.4);
+    box-shadow: 0 8px 20px rgba(42,157,143,0.4);
 }
 .submit-btn:active { transform: scale(0.98); }
 
@@ -592,8 +593,8 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 #chatbot-header {
-    background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
-    color: var(--primary-color);
+    background: linear-gradient(135deg, #0f3d3e 0%, #1a5657 100%);
+    color: #e9c46a;
     padding: 14px 18px;
     display: flex;
     justify-content: space-between;
@@ -606,7 +607,7 @@ tbody tr:last-child td { border-bottom: none; }
     position: absolute;
     bottom: 0; left: 0; right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    background: linear-gradient(90deg, transparent, #2a9d8f, transparent);
 }
 
 #chatbot-header span {
@@ -623,8 +624,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 #chatbot-header button {
     background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(245,166,35,0.2);
-    color: var(--primary-color);
+    border: 1px solid rgba(42,157,143,0.3);
+    color: #e9c46a;
     cursor: pointer;
     font-size: 0.9rem;
     width: 30px;
@@ -636,7 +637,7 @@ tbody tr:last-child td { border-bottom: none; }
     transition: all 0.2s ease;
 }
 #chatbot-header button:hover {
-    background: rgba(245,166,35,0.2);
+    background: rgba(42,157,143,0.25);
 }
 
 #chatbot-body {
@@ -687,15 +688,15 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .user-msg {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: #f5a623;
+    background: linear-gradient(135deg, #0f3d3e, #1a5657);
+    color: #e9c46a;
     margin-right: auto;
     margin-left: auto;
     align-self: flex-end;
     border-radius: 14px 4px 14px 14px;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    border: 1px solid rgba(245,166,35,0.25);
+    box-shadow: 0 4px 12px rgba(15,61,62,0.3);
+    border: 1px solid rgba(42,157,143,0.3);
 }
 
 .chat-input-area {
@@ -721,12 +722,12 @@ tbody tr:last-child td { border-bottom: none; }
 .chat-input-area input:focus {
     border-color: var(--primary-color);
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
+    box-shadow: 0 0 0 3px rgba(42,157,143,0.15);
 }
 
 .chat-input-area button {
-    background: linear-gradient(135deg, #f5a623, #ffd700);
-    color: #111;
+    background: linear-gradient(135deg, #2a9d8f, #1a7a6e);
+    color: #ffffff;
     border: none;
     border-radius: 50%;
     width: 40px;
@@ -741,9 +742,9 @@ tbody tr:last-child td { border-bottom: none; }
     flex-shrink: 0;
 }
 .chat-input-area button:hover {
-    background: linear-gradient(135deg, #e09010, #f5a623);
+    background: linear-gradient(135deg, #21867a, #2a9d8f);
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(245,166,35,0.4);
+    box-shadow: 0 4px 12px rgba(42,157,143,0.4);
 }
 
 #mic-btn {
@@ -775,13 +776,13 @@ tbody tr:last-child td { border-bottom: none; }
         bottom: 0;
         left: 0;
         right: 0;
-        background: #0d0d0d;
+        background: #0a2e2e;
         display: flex;
         justify-content: space-around;
         padding: 8px 4px;
         z-index: 1000;
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
-        border-top: 2px solid rgba(245,166,35,0.4);
+        box-shadow: 0 -4px 20px rgba(15,61,62,0.5);
+        border-top: 2px solid rgba(42,157,143,0.4);
         flex-wrap: nowrap;
     }
     .tab-btn {
