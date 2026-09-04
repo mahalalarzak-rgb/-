@@ -687,14 +687,15 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .user-msg {
-    background: linear-gradient(135deg, #f5a623, #ffd700);
-    color: #111;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: #f5a623;
     margin-right: auto;
     margin-left: auto;
     align-self: flex-end;
     border-radius: 14px 4px 14px 14px;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(245,166,35,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    border: 1px solid rgba(245,166,35,0.25);
 }
 
 .chat-input-area {
