@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المخزون - شركة الأرزاق بالله</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="SCR/logo.png" alt="لوجو الأرزاق بالله" class="logo-img" id="main-logo">
+            <h1>إدارة المخزون - الأرزاق بالله</h1>
+        </div>
+        <nav>
+            <button class="tab-btn active" data-target="home"><i class="fas fa-exclamation-triangle"></i> النواقص</button>
+            <button class="tab-btn" data-target="inventory"><i class="fas fa-box-open"></i> المنتجات</button>
+            <button class="tab-btn" data-target="add-product"><i class="fas fa-plus-circle"></i> إضافة</button>
+            <button class="tab-btn" data-target="action-log"><i class="fas fa-history"></i> السجل</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- الرئيسية -->
+        <section id="home" class="tab-content active">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> ملخص البضاعة</h2>
+            </div>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <i class="fas fa-boxes stat-icon"></i>
+                    <h3>إجمالي المنتجات</h3>
+                    <p id="total-products">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <h3>المنتجات المتوفرة</h3>
+                    <p id="available-products">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-exclamation-triangle stat-icon"></i>
+                    <h3>المنتجات الناقصة (خلصانة)</h3>
+                    <p id="out-of-stock">0</p>
+                </div>
+                <div class="stat-card" style="background-color: #2563eb;">
+                    <i class="fas fa-money-bill-wave stat-icon"></i>
+                    <h3>قيمة المخزون</h3>
+                    <p id="total-value">0 ج</p>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin-top: 40px;">
+                <h2><i class="fas fa-clipboard-list"></i> النواقص المطلوبة بالمخزون</h2>
+            </div>
+            <div id="shortages-list" class="shortages-list">
+                <!-- Shortages will be injected here -->
+            </div>
+        </section>
+
+        <!-- المخزون -->
+        <section id="inventory" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-boxes"></i> إدارة المخزون</h2>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="ابحث عن منتج...">
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المنتج</th>
+                            <th>الكمية / المطلوب</th>
+                            <th>السعر</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-body">
+                        <!-- Products will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- إضافة منتج -->
+        <section id="add-product" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-plus-circle"></i> إضافة منتج جديد</h2>
+            </div>
+            <form id="add-form" class="product-form">
+                <div class="form-group">
+                    <label>اسم المنتج</label>
+                    <input type="text" id="prod-name" required placeholder="مثال: لمبة إشارة">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الكمية الحالية</label>
+                        <input type="number" id="prod-qty" required min="0" placeholder="مثال: 10">
+                    </div>
+                    <div class="form-group">
+                        <label>الحد المطلوب بالمخزون</label>
+                        <input type="number" id="prod-target-qty" required min="1" placeholder="مثال: 20">
+                    </div>
+                    <div class="form-group">
+                        <label>السعر (اختياري)</label>
+                        <input type="number" id="prod-price" min="0" placeholder="مثال: 50">
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ المنتج</button>
+            </form>
+        </section>
+
+        <!-- سجل الحركات (جديد) -->
+        <section id="action-log" class="tab-content">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <h2><i class="fas fa-history"></i> سجل الحركات الأخيرة</h2>
+                <div class="backup-actions" style="display: flex; gap: 10px;">
+                    <button id="btn-export" class="action-btn" style="background: var(--primary-dark); color: var(--primary-color); padding: 8px 15px; width: auto; font-weight: bold;"><i class="fas fa-download"></i> نسخة احتياطية</button>
+                    <label for="import-file" class="action-btn" style="background: var(--primary-dark); color: var(--primary-color); padding: 8px 15px; width: auto; font-weight: bold; cursor: pointer; display: inline-block; text-align: center; margin: 0;"><i class="fas fa-upload"></i> استعادة</label>
+                    <input type="file" id="import-file" style="display: none;" accept=".json">
+                </div>
+            </div>
+            <div class="table-container" style="margin-top: 20px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">الوقت والتاريخ</th>
+                            <th style="width: 75%">الحركة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-body">
+                        <!-- Logs will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbot-widget">
+        <div id="chatbot-header">
+            <span><i class="fas fa-robot"></i> المساعد الذكي</span>
+            <button id="toggle-chat"><i class="fas fa-chevron-up"></i></button>
+        </div>
+        <div id="chatbot-body" class="hidden">
+            <div id="chat-messages">
+                <div class="message bot-msg">أهلاً بك! أنا المساعد الذكي. (أنا دلوقتي عندي ذاكرة وبفتكر كلامنا اللي فات!)</div>
+            </div>
+            <div class="chat-input-area">
+                <button id="mic-btn" title="تحدث بالأوامر"><i class="fas fa-microphone"></i></button>
+                <input type="text" id="chat-input" placeholder="اكتب سؤالك أو أمرك هنا...">
+                <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
