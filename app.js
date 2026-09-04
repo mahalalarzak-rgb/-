@@ -53,7 +53,17 @@ const logsDocRef = doc(db, 'inventory', 'logs');
 onSnapshot(inventoryDocRef, (docSnap) => {
     if (docSnap.exists()) {
         localProducts = docSnap.data().items || [];
+        let cleaned = false;
+        localProducts.forEach(p => {
+            if (p.name && p.name.match(/^(?:اسمه|اسمها|اسم)\s+/i)) {
+                p.name = p.name.replace(/^(?:اسمه|اسمها|اسم)\s+/i, '').trim();
+                cleaned = true;
+            }
+        });
         localStorage.setItem('arzaq_inventory', JSON.stringify(localProducts)); // Backup locally
+        if (cleaned) {
+            setDoc(inventoryDocRef, { items: localProducts }, { merge: true });
+        }
         updateUI();
     } else {
         // If Firestore is empty, initialize it with local data
@@ -528,6 +538,13 @@ function normalizeText(text) {
 // ===========================================
 // البحث عن منتج بالاسم (مع مطابقة ذكية ومرونة)
 // ===========================================
+const PRODUCT_STOP_WORDS = new Set([
+    'اسمه', 'اسمها', 'اسم', 'منتج', 'صنف', 'بضاعه', 'بضاعة', 'حاجه', 'حاجة',
+    'جديد', 'جديدة', 'ال', 'الي', 'اللي', 'عندي', 'عندك', 'فيه', 'واحد', 'واحده',
+    'واحدة', 'قطعه', 'قطعة', 'قطع', 'حته', 'حبة', 'كام', 'بكام', 'سعر', 'سعره',
+    'كميه', 'كمية', 'عدد', 'زود', 'نقص', 'ضيف', 'اضف', 'خلي', 'خليه', 'خليهم'
+]);
+
 function findProduct(text, productsList) {
     let bestMatch = null;
     let highestScore = 0;
@@ -536,28 +553,37 @@ function findProduct(text, productsList) {
     productsList.forEach(item => {
         let score = 0;
         const normName = normalizeText(item.name);
-        const nameWords = normName.split(' ');
+        if (!normName) return;
 
         // مطابقة كاملة
-        if (normInput.includes(normName)) score += 15;
-
-        // مطابقة الكلمات
-        nameWords.forEach(word => {
-            if (word.length > 2 && normInput.includes(word)) score += 4;
-            // التعامل مع الجمع (كتاوتات، لمبات)
-            if (word.length > 2 && normInput.includes(word + 'ات')) score += 3;
-            if (word.endsWith('ه') && normInput.includes(word.slice(0, -1) + 'ات')) score += 3;
-            // بدون آخر حرف (اختصار)
-            if (word.length > 3 && normInput.includes(word.slice(0, -1))) score += 2;
-        });
-
-        // مطابقة أولى كلمتين
-        if (nameWords.length >= 2) {
-            const twoWords = nameWords[0] + ' ' + nameWords[1];
-            if (normInput.includes(twoWords)) score += 8;
+        if (normInput.includes(normName)) {
+            score += 20;
         }
 
-        if (score > highestScore && score >= 3) {
+        const nameWords = normName.split(' ').filter(w => !PRODUCT_STOP_WORDS.has(w) && w.length >= 2);
+
+        // مطابقة الكلمات ذات المعنى فقط
+        nameWords.forEach(word => {
+            if (normInput.includes(word)) {
+                score += 5;
+            } else if (word.length > 2 && normInput.includes(word + 'ات')) {
+                // التعامل مع الجمع (كتاوتات، لمبات)
+                score += 4;
+            } else if (word.endsWith('ه') && normInput.includes(word.slice(0, -1) + 'ات')) {
+                score += 4;
+            } else if (word.length > 3 && normInput.includes(word.slice(0, -1))) {
+                // بدون آخر حرف (اختصار)
+                score += 2;
+            }
+        });
+
+        // مطابقة أولى كلمتين إذا لم تكن كلمات توقف
+        if (nameWords.length >= 2) {
+            const twoWords = nameWords[0] + ' ' + nameWords[1];
+            if (normInput.includes(twoWords)) score += 10;
+        }
+
+        if (score > highestScore && score >= 4) {
             highestScore = score;
             bestMatch = item;
         }
@@ -641,7 +667,8 @@ function processAssistantCommand(text) {
     // 0. INTENT: إضافة منتج جديد (صريح من الشات)
     // ------------------------------------------
     const isExplicitAddProduct = normText.match(/(?:ضيف|اضف|اضافة|اضافه|زود|حط|سجل|اعمل|دخل|ادخل|انشئ|انشاء)\s+(?:منتج|صنف|بضاعه|بضاعة|جديد)/) || 
-                                normText.match(/^(?:منتج جديد|صنف جديد|منتج اسمه|صنف اسمه|منتج|صنف)\s+/);
+                                normText.match(/^(?:منتج جديد|صنف جديد|منتج اسمه|صنف اسمه|منتج|صنف)\s+/) ||
+                                normText.match(/^(?:اسمه|اسمها)\s+/);
 
     if (isExplicitAddProduct) {
         let rawName = text
@@ -1096,6 +1123,25 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
 
     let shouldKeepListening = false;
     let lastProcessedText = '';
+    let speechSilenceTimeout = null;
+    let accumulatedSpeech = '';
+
+    function dispatchAccumulatedSpeech() {
+        if (speechSilenceTimeout) {
+            clearTimeout(speechSilenceTimeout);
+            speechSilenceTimeout = null;
+        }
+        const textToProcess = (accumulatedSpeech || chatInput.value || '').trim();
+        accumulatedSpeech = '';
+        if (textToProcess && textToProcess !== lastProcessedText) {
+            lastProcessedText = textToProcess;
+            chatInput.value = textToProcess;
+            processAssistantCommand(textToProcess);
+            setTimeout(() => {
+                if (chatInput) chatInput.value = '';
+            }, 100);
+        }
+    }
 
     recognition.onstart = function() {
         micBtn.classList.add('recording');
@@ -1105,23 +1151,24 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
     recognition.onresult = function(event) {
         if (!event.results || event.results.length === 0) return;
 
-        const lastIndex = event.results.length - 1;
-        const currentResult = event.results[lastIndex];
-        const textSegment = currentResult[0].transcript.trim();
+        // تجميع كل العبارات المتتالية في جملة واحدة كاملة
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+            fullTranscript += event.results[i][0].transcript + ' ';
+        }
+        fullTranscript = fullTranscript.trim();
 
-        if (currentResult.isFinal) {
-            if (textSegment && textSegment !== lastProcessedText) {
-                lastProcessedText = textSegment;
-                chatInput.value = textSegment;
-                processAssistantCommand(textSegment);
-                setTimeout(() => {
-                    if (chatInput) chatInput.value = '';
-                }, 100);
+        if (fullTranscript) {
+            accumulatedSpeech = fullTranscript;
+            chatInput.value = fullTranscript;
+
+            // إعطاء مهلة للمستخدم حتى ينهي جملته بدون تقطيع
+            if (speechSilenceTimeout) {
+                clearTimeout(speechSilenceTimeout);
             }
-        } else {
-            if (textSegment) {
-                chatInput.value = textSegment;
-            }
+            speechSilenceTimeout = setTimeout(() => {
+                dispatchAccumulatedSpeech();
+            }, 1400); // 1.4 ثانية صمت تعني انتهاء الجملة بالكامل
         }
     };
 
@@ -1154,6 +1201,11 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
     };
 
     recognition.onend = function() {
+        // إذا كان هناك كلام معلق لم ينفذ بعد
+        if (accumulatedSpeech) {
+            dispatchAccumulatedSpeech();
+        }
+
         // إذا كان المستخدم قد فعل المايك المستمر، أعد تشغيله تلقائياً بمرونة!
         if (shouldKeepListening) {
             try {
@@ -1183,6 +1235,7 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
         if (shouldKeepListening) {
             // إيقاف المايك عند الضغط عليه مرة أخرى
             shouldKeepListening = false;
+            dispatchAccumulatedSpeech();
             try { recognition.stop(); } catch(e) {}
             micBtn.classList.remove('recording');
             chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
@@ -1191,6 +1244,7 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
             // تشغيل وضع المايك المستمر
             shouldKeepListening = true;
             lastProcessedText = '';
+            accumulatedSpeech = '';
             try {
                 recognition.start();
             } catch (e) {
