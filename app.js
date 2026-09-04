@@ -614,31 +614,15 @@ function processAssistantCommand(text) {
     let reply = 'عفواً، لم أفهم الأمر.';
 
     if (product) {
-        // تحديث الذاكرة بالمنتج الجديد
+        // تحديث الذاكرة بالمنتج الحالي
         lastContextProductId = product.id;
         localStorage.setItem('arzaq_last_product_id', lastContextProductId);
     } else if (lastContextProductId) {
-        // طريقة ذكية لمعرفة هل الكلام ده أمر تابع للمنتج اللي في الذاكرة ولا لأ
-        let padded = ' ' + normText.replace(/\d+/g, '') + ' ';
-        const safeWords = [
-            'طب','طيب','ماشي','لو','سمحت','بالله','عليك','بقولك','يا','سيدي','ممكن','عايز','عاوز',
-            'علي','على','في','من','سعره','سعرها','السعر','سعر','كميته','كميتها','الكميه','كميه',
-            'ليه','ليها','بتاعه','بتاعها','خلي','يخلي','جنيه','جنيها','قطعه','حته','عليهم','كمان',
-            'بكام','كام','كم','موجود','زود','ضيف','اضف','حط','نقص','قلل','بعت','صرفت','بيع',
-            'احذف','امسح','شيل','هل','ناقص','خلصان','بقي','بقى','دي','ده','دلوقتي','اللي','ال'
-        ];
-        
-        safeWords.forEach(w => {
-            const regex = new RegExp(`\\s${w}\\s`, 'g');
-            padded = padded.replace(regex, ' ');
-            padded = padded.replace(regex, ' '); // مرتين عشان الكلمات المتجاورة
-        });
-        
-        const isPureCommand = (padded.trim() === '');
-        
-        if (isPureCommand || (padded.trim() === '' && amount !== null)) {
-            product = products.find(p => p.id == lastContextProductId);
-            if (product) usedMemory = true;
+        // استخدام المنتج من الذاكرة دائماً إذا لم يذكر المستخدم اسماً لمنتج آخر
+        const memProd = products.find(p => p.id == lastContextProductId);
+        if (memProd) {
+            product = memProd;
+            usedMemory = true;
         }
     }
 
@@ -679,11 +663,6 @@ function processAssistantCommand(text) {
                 reply = "لإضافة منتج، يرجى كتابة اسمه بوضوح مثل: (ضيف منتج تيل فرامل 10 قطع بسعر 200).";
                 return sendReply(reply);
             }
-        } else if (lastContextProductId) {
-            const memProd = products.find(p => p.id == lastContextProductId);
-            reply = memProd 
-                ? `لم أتعرف على اسم المنتج في كلامك.. هل تقصد "${memProd.name}"؟ لو أيوه، وضح الأمر زي (زود 5) أو (بكام).`
-                : "لم أتعرف على اسم المنتج. يرجى التوضيح.";
         } else if (amount) {
             reply = "أنا فهمت الرقم، بس مش لاقي اسم المنتج في المخزون. اتأكد إنك كاتب اسم المنتج صح أو قولي (ضيف منتج " + text + ").";
         } else {
@@ -696,6 +675,23 @@ function processAssistantCommand(text) {
     const memoryHint = usedMemory ? `💡 بخصوص (${product.name}):\n` : "";
 
     // --- العمليات المرتبطة بالمنتج (المستخرج من النص أو الذاكرة) ---
+
+    // ------------------------------------------
+    // 2.4 COMBINED INTENT: تحديث السعر والكمية معا في نفس الرسالة
+    // ------------------------------------------
+    const priceMatch = text.match(/(?:سعر|سعره|السعر)[^\d]*(\d+)/i) || text.match(/(\d+)\s*(?:جنيه|ج\b)/i);
+    const qtyMatch = text.match(/(?:كميه|كمية|الكميه|الكمية|عدد|قطعه|قطع|خليهم|خلي|زود|نقص)[^\d]*(\d+)/i);
+
+    if (priceMatch && qtyMatch && (normText.includes('سعر') || normText.includes('سعره')) && (normText.includes('كمي') || normText.includes('كمية') || normText.includes('كميه') || normText.includes('عدد'))) {
+        const newPrice = parseInt(priceMatch[1]);
+        const newQty = parseInt(qtyMatch[1]);
+        
+        product.price = newPrice;
+        product.qty = newQty;
+        saveProducts(products);
+        logAction(`✏️ قام المساعد بتحديث سعر "${product.name}" إلى ${newPrice} ج والكمية إلى ${newQty} قطعة.`);
+        return sendReply(memoryHint + `✅ تم تحديث "${product.name}" بنجاح:\n• السعر أصبح: ${newPrice} جنيه\n• الكمية أصبحت: ${newQty} قطعة`);
+    }
 
     // ------------------------------------------
     // 2.5 INTENT: ضبط وتعديل الكمية مباشرة (SET QUANTITY)
