@@ -22,6 +22,14 @@ let appLogs = [];
 const localInv = localStorage.getItem('arzaq_inventory');
 if (localInv) {
     localProducts = JSON.parse(localInv);
+    let cleaned = false;
+    localProducts.forEach(p => {
+        if (p.name && p.name.match(/^(?:اسمه|اسمها|اسم)\s+/i)) {
+            p.name = p.name.replace(/^(?:اسمه|اسمها|اسم)\s+/i, '').trim();
+            cleaned = true;
+        }
+    });
+    if (cleaned) localStorage.setItem('arzaq_inventory', JSON.stringify(localProducts));
 } else {
     localProducts = [
         { id: 1, name: 'كتاوت 24 فولت', qty: 15, targetQty: 20, price: 120 },
@@ -579,6 +587,7 @@ function processAssistantCommand(text) {
     if (isExplicitAddProduct) {
         let rawName = text
             .replace(/(?:ممكن|عايز|عاوز|لو سمحت)?\s*(?:ضيف|اضف|اضافة|حط|سجل)\s+(?:منتج|صنف|بضاعه|جديد)?/gi, '')
+            .replace(/^(?:اسمه|اسمها|اسم|اسمه الـ|اسمه ال|حاجه اسمها|حاجة اسمها|واحد اسمه|واحده اسمها)\s+/gi, '')
             .trim();
 
         let foundQty = 0;
@@ -593,8 +602,10 @@ function processAssistantCommand(text) {
             }
             rawName = rawName.replace(/\d+/g, '')
                              .replace(/كميه|كمية|بكمية|بكميه|عدد|قطع|قطعه|سعر|بسعر|جنيه|جنيها|حته|حبات/g, '')
+                             .replace(/(?:^|\s+)(?:اسمه|اسمها|اسم)(?:\s+|$)/gi, ' ')
                              .trim();
         }
+        rawName = rawName.replace(/^(?:اسمه|اسمها|اسم)\s+/gi, '').trim();
 
         if (rawName.length >= 2) {
             const newProd = {
@@ -748,7 +759,10 @@ function processAssistantCommand(text) {
     if (!product) {
         // فحص إذا كان المستخدم يريد إضافة منتج غير موجود مباشرة من الشات
         if (normText.match(/^(?:ضيف|اضف|تسجيل|حط)\s+/)) {
-            let rawName = text.replace(/^(?:ضيف|اضف|تسجيل|حط)\s+(?:منتج|صنف|قطعه|بضاعه)?/i, '').trim();
+            let rawName = text
+                .replace(/^(?:ضيف|اضف|تسجيل|حط)\s+(?:منتج|صنف|قطعه|بضاعه)?/i, '')
+                .replace(/^(?:اسمه|اسمها|اسم|اسمه الـ|اسمه ال|حاجه اسمها|حاجة اسمها)\s+/gi, '')
+                .trim();
             let foundQty = 0;
             let foundPrice = null;
             let foundTarget = 10;
@@ -760,8 +774,10 @@ function processAssistantCommand(text) {
                 }
                 rawName = rawName.replace(/\d+/g, '')
                                  .replace(/كميه|كمية|بكمية|بكميه|عدد|قطع|قطعه|سعر|بسعر|جنيه|جنيها/g, '')
+                                 .replace(/(?:^|\s+)(?:اسمه|اسمها|اسم)(?:\s+|$)/gi, ' ')
                                  .trim();
             }
+            rawName = rawName.replace(/^(?:اسمه|اسمها|اسم)\s+/gi, '').trim();
 
             if (rawName.length >= 2) {
                 const newProd = {
