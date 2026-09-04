@@ -802,12 +802,30 @@ function processAssistantCommand(text) {
 
     let reply = 'عفواً، لم أفهم الأمر.';
 
+function isPureContinuationCommand(normText) {
+    let str = ' ' + normText.replace(/\d+/g, '').replace(/[٠١٢٣٤٥٦٧٨٩]/g, '') + ' ';
+    const commandWords = [
+        'طب','طيب','ماشي','لو','سمحت','بالله','عليك','بقولك','بقول','يا','سيدي','باشا','يا باشا','ممكن','عايز','عاوز',
+        'علي','على','في','من','سعره','سعرها','السعر','سعر','كميته','كميتها','الكميه','الكمية','كميه','كمية',
+        'ليه','ليها','بتاعه','بتاعها','خلي','خليه','خليهم','يخلي','جنيه','جنيها','قطعه','قطعة','حته','حبة','حبات','عليهم','كمان',
+        'بكام','كام','كم','موجود','زود','زوده','ضيف','اضف','حط','نقص','نقصه','قلل','بعت','صرفت','بيع',
+        'احذف','احذفه','امسح','امسحه','شيل','شيله','هل','ناقص','خلصان','بقي','بقى','دي','ده','دلوقتي','اللي','ال','قولت','لك'
+    ];
+    
+    commandWords.forEach(w => {
+        const regex = new RegExp(`\\s${w}\\s`, 'g');
+        str = str.replace(regex, ' ');
+        str = str.replace(regex, ' ');
+    });
+    
+    return (str.trim() === '');
+}
+
     if (product) {
-        // تحديث الذاكرة بالمنتج الحالي
         lastContextProductId = product.id;
         localStorage.setItem('arzaq_last_product_id', lastContextProductId);
-    } else if (lastContextProductId) {
-        // استخدام المنتج من الذاكرة دائماً إذا لم يذكر المستخدم اسماً لمنتج آخر
+    } else if (lastContextProductId && isPureContinuationCommand(normText)) {
+        // نستخدم الذاكرة فقط إذا كان الكلام عبارة عن أمر متابعة مجرد بدون ذكر اسم جديد
         const memProd = products.find(p => p.id == lastContextProductId);
         if (memProd) {
             product = memProd;
@@ -828,11 +846,12 @@ function processAssistantCommand(text) {
             let foundTarget = 10;
             
             if (numbers && numbers.length > 0) {
-                foundQty = parseInt(numbers[0]);
+                foundQty = numbers[0];
                 if (numbers.length > 1) {
-                    foundPrice = parseInt(numbers[1]);
+                    foundPrice = numbers[1];
                 }
                 rawName = rawName.replace(/\d+/g, '')
+                                 .replace(/[٠١٢٣٤٥٦٧٨٩]/g, '')
                                  .replace(/كميه|كمية|بكمية|بكميه|عدد|قطع|قطعه|سعر|بسعر|جنيه|جنيها/g, '')
                                  .replace(/(?:^|\s+)(?:اسمه|اسمها|اسم)(?:\s+|$)/gi, ' ')
                                  .trim();
@@ -857,12 +876,20 @@ function processAssistantCommand(text) {
                 reply = "لإضافة منتج، يرجى كتابة اسمه بوضوح مثل: (ضيف منتج تيل فرامل 10 قطع بسعر 200).";
                 return sendReply(reply);
             }
-        } else if (amount) {
-            reply = "أنا فهمت الرقم، بس مش لاقي اسم المنتج في المخزون. اتأكد إنك كاتب اسم المنتج صح أو قولي (ضيف منتج " + text + ").";
         } else {
-            reply = "لم أتعرف على اسم المنتج. يرجى التوضيح أو التأكد من إن المنتج موجود في المخزون.";
+            // استخراج اسم المنتج الذي يبحث عنه المستخدم
+            let searchWord = text
+                .replace(/(?:يا|باشا|يا باشا|بقول|لك|قولت|لو سمحت|ممكن|عندك|في|عندي|هل|فيه)?/gi, '')
+                .replace(/^(?:اسمه|اسمها|اسم)\s+/gi, '')
+                .trim();
+
+            if (searchWord.length >= 2) {
+                reply = `🔍 لم أجد "${searchWord}" في المخزون حالياً.\n\nإذا كنت تريد إضافته كمنتج جديد، قولي: (ضيف منتج ${searchWord} 10 بسعر 50).`;
+            } else {
+                reply = "لم أتعرف على اسم المنتج في كلامك. تأكد من الاسم أو قولي (ضيف منتج اسم_المنتج 10).";
+            }
+            return sendReply(reply);
         }
-        return sendReply(reply);
     }
 
     // إضافة توضيح بسيط لو استخدمنا الذاكرة عشان المساعد يوضح إنه فاكر
