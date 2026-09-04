@@ -875,3 +875,106 @@ tbody tr:last-child td { border-bottom: none; }
     .tab-content { padding: 18px; }
     .product-form { padding: 18px; }
 }
+
+/* ==========================================
+   Modal Backdrop & Popup Styling
+   ========================================== */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.hidden {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: #0d2826;
+    border: 1px solid rgba(42, 157, 143, 0.5);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 540px;
+    padding: 24px;
+    color: #ffffff;
+    animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.82) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modal-header h3 {
+    font-size: 1.3rem;
+    color: #e9c46a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-weight: 800;
+}
+
+.close-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: #aaa;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.close-btn:hover {
+    background: rgba(231, 111, 81, 0.2);
+    color: #e76f51;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ddd;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
