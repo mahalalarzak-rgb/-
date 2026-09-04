@@ -347,7 +347,7 @@ const chatbotHeader = document.getElementById('chatbot-header');
 
 // 💡 ميزة الذاكرة: حفظ المحادثة وحفظ آخر منتج تكلمنا عنه
 let chatHistory = JSON.parse(localStorage.getItem('arzaq_chat')) || [
-    { isUser: false, text: 'أهلاً بك! أنا المساعد الذكي. (أنا دلوقتي عندي ذاكرة وبفتكر كلامنا اللي فات!)' }
+    { isUser: false, text: 'أهلاً! أنا مساعدك الذكي لإدارة المخزون 🤖\n\nأقدر أساعدك بـ:\n• "كتاوت كام؟" أو "عندك كام كتاوت؟"\n• "زود كتاوت 5" أو "نقص 3"\n• "سعر الكتاوت" أو "غير سعره 150"\n• "ضيف منتج بولي V 10 قطع بسعر 200"\n• "ايه الناقص" أو "كل البضاعة"\n• "امسح كتاوت" أو "احذفه"' }
 ];
 let lastContextProductId = localStorage.getItem('arzaq_last_product_id') || null;
 
@@ -384,29 +384,52 @@ function sendReply(reply) {
     setTimeout(() => addMessage(reply, false), 500);
 }
 
-// أداة البحث وتوحيد النص
+// ===========================================
+// تطبيع النص العربي (يعالج اللهجات والاختلافات)
+// ===========================================
 function normalizeText(text) {
-    return text.replace(/[أإآا]/g, 'ا')
-               .replace(/ة/g, 'ه')
-               .toLowerCase().trim();
+    return text
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/ئ/g, 'ي')
+        .replace(/ؤ/g, 'و')
+        .replace(/[ًٌٍَُِّْ]/g, '') // إزالة التشكيل
+        .replace(/\s+/g, ' ')
+        .toLowerCase().trim();
 }
 
+// ===========================================
+// البحث عن منتج بالاسم (مع مطابقة ذكية ومرونة)
+// ===========================================
 function findProduct(text, productsList) {
     let bestMatch = null;
     let highestScore = 0;
-    const normalizedText = normalizeText(text);
+    const normInput = normalizeText(text);
 
     productsList.forEach(item => {
         let score = 0;
-        let normalizedItemName = normalizeText(item.name);
-        
-        if (normalizedText.includes(normalizedItemName)) score += 10;
+        const normName = normalizeText(item.name);
+        const nameWords = normName.split(' ');
 
-        let itemWords = normalizedItemName.split(' ');
-        itemWords.forEach(word => {
-            if (word.length > 2 && normalizedText.includes(word)) score += 3;
-            if (word.endsWith('ه') && normalizedText.includes(word.slice(0, -1) + 'ات')) score += 3; // جمع ات
+        // مطابقة كاملة
+        if (normInput.includes(normName)) score += 15;
+
+        // مطابقة الكلمات
+        nameWords.forEach(word => {
+            if (word.length > 2 && normInput.includes(word)) score += 4;
+            // التعامل مع الجمع (كتاوتات، لمبات)
+            if (word.length > 2 && normInput.includes(word + 'ات')) score += 3;
+            if (word.endsWith('ه') && normInput.includes(word.slice(0, -1) + 'ات')) score += 3;
+            // بدون آخر حرف (اختصار)
+            if (word.length > 3 && normInput.includes(word.slice(0, -1))) score += 2;
         });
+
+        // مطابقة أولى كلمتين
+        if (nameWords.length >= 2) {
+            const twoWords = nameWords[0] + ' ' + nameWords[1];
+            if (normInput.includes(twoWords)) score += 8;
+        }
 
         if (score > highestScore && score >= 3) {
             highestScore = score;
@@ -417,54 +440,131 @@ function findProduct(text, productsList) {
     return bestMatch;
 }
 
-// محرك فهم الأوامر (NLP Intent Engine)
+// ===========================================
+// محرك فهم الأوامر الذكي (NLP Intent Engine)
+// ===========================================
 function processAssistantCommand(text) {
     text = text.trim();
-    if(!text) return;
-    addMessage(text, true); // عرض ما قاله المستخدم
+    if (!text) return;
+    addMessage(text, true);
 
     const normText = normalizeText(text);
     let products = getProducts();
     let product = findProduct(text, products);
-    
-    // استخراج الأرقام من النص
+
+    // استخراج الأرقام
     const numbers = text.match(/\d+/g);
     const amount = numbers ? parseInt(numbers[0]) : null;
 
-    let reply = "عفواً، لم أفهم الأمر بشكل كامل.";
+    // ------------------------------------------
+    // INTENT: تحية ومساعدة
+    // ------------------------------------------
+    if (normText.match(/^(اهلا|مرحبا|هاي|هلو|السلام|صباح|مساء|ازيك|عامل|كيف حالك|hi|hello)/)) {
+        return sendReply('أهلاً وسهلاً! 👋 أنا هنا لمساعدتك في إدارة المخزون.\nقولي إيه اللي عايزه وأنا جاهز!');
+    }
+
+    if (normText.match(/مساعده|ساعدني|ايه اللي تعمله|ايه اوامرك|الاوامر|قائمه الاوامر|ايه ممكن|وظيفتك/)) {
+        return sendReply(
+            '🤖 أنا مساعدك لإدارة المخزون! إليك الأوامر المتاحة:\n\n' +
+            '📦 عرض المعلومات:\n' +
+            '• "كتاوت كام؟" — عرض الكمية\n' +
+            '• "سعر الكتاوت" — عرض السعر\n' +
+            '• "ايه الناقص" — عرض النواقص\n' +
+            '• "كل البضاعة" — عرض كل المخزون\n' +
+            '• "إجمالي المخزون" — قيمة المخزون\n\n' +
+            '✏️ تعديل البيانات:\n' +
+            '• "زود كتاوت 5" — إضافة كمية\n' +
+            '• "نقص/بعت كتاوت 3" — خصم كمية\n' +
+            '• "خلي كتاوت 20" — ضبط الكمية مباشرة\n' +
+            '• "سعر كتاوت 150" — تغيير السعر\n' +
+            '• "الحد كتاوت 30" — تغيير الحد المطلوب\n\n' +
+            '➕ إضافة وحذف:\n' +
+            '• "ضيف منتج بولي V 10 بسعر 200" — إضافة منتج\n' +
+            '• "امسح كتاوت" — حذف منتج'
+        );
+    }
 
     // ------------------------------------------
-    // 1. INTENT: عرض كل البضاعة
+    // INTENT: إحصائيات المخزون
     // ------------------------------------------
-    if (normText.match(/كل البضاعه|كل المنتجات|عرض الكل|اعرضلي كل/)) {
-        if(products.length === 0) return sendReply("المخزون فارغ حالياً.");
-        reply = "📦 المخزون:\n" + products.map(p => {
+    if (normText.match(/اجمالي المخزون|قيمه المخزون|كم قيمه|احصائيات|الاحصائيات|ملخص|نبذه|overview/)) {
+        const total = products.length;
+        const available = products.filter(p => p.qty > 0).length;
+        const outOfStock = products.filter(p => p.qty === 0).length;
+        const shortage = products.filter(p => p.qty < p.targetQty).length;
+        const totalValue = products.reduce((acc, p) => acc + ((p.qty || 0) * (p.price || 0)), 0);
+        return sendReply(
+            `📊 ملخص المخزون:\n` +
+            `• إجمالي المنتجات: ${total}\n` +
+            `• المتوفرة: ${available}\n` +
+            `• المنتهية (صفر): ${outOfStock}\n` +
+            `• الناقصة عن الحد: ${shortage}\n` +
+            `• قيمة المخزون: ${totalValue.toLocaleString('ar-EG')} جنيه`
+        );
+    }
+
+    // ------------------------------------------
+    // INTENT: الأغلى / الأرخص
+    // ------------------------------------------
+    if (normText.match(/الاغلي|الاعلي سعرا|اغلي منتج/)) {
+        const sorted = products.filter(p => p.price).sort((a, b) => b.price - a.price);
+        if (sorted.length === 0) return sendReply('لا يوجد منتجات بسعر محدد.');
+        const top = sorted[0];
+        return sendReply(`💰 أغلى منتج هو "${top.name}" بسعر ${top.price} جنيه.`);
+    }
+
+    if (normText.match(/الارخص|ارخص منتج|اقل سعرا/)) {
+        const sorted = products.filter(p => p.price).sort((a, b) => a.price - b.price);
+        if (sorted.length === 0) return sendReply('لا يوجد منتجات بسعر محدد.');
+        const top = sorted[0];
+        return sendReply(`💰 أرخص منتج هو "${top.name}" بسعر ${top.price} جنيه.`);
+    }
+
+    // ------------------------------------------
+    // INTENT: عرض كل البضاعة
+    // ------------------------------------------
+    if (normText.match(/كل البضاعه|كل المنتجات|عرض الكل|اعرضلي كل|قائمه المخزون|المخزون كله/)) {
+        if (products.length === 0) return sendReply('المخزون فارغ حالياً.');
+        reply = '📦 قائمة المخزون الكاملة:\n\n' + products.map((p, i) => {
             const missing = Math.max(p.targetQty - p.qty, 0);
-            return `- ${p.name}\nالموجود: ${p.qty} | المطلوب: ${p.targetQty} | السعر: ${p.price || 0} ج | الناقص: ${missing}`;
+            const status = p.qty === 0 ? '❌ خلصان' : p.qty < p.targetQty ? '🔴 ناقص' : '✅ متوفر';
+            return `${i+1}. ${p.name}\n   الموجود: ${p.qty} | المطلوب: ${p.targetQty} | السعر: ${p.price || 0} ج\n   الحالة: ${status}${missing > 0 ? ' (ناقص ' + missing + ')' : ''}`;
         }).join('\n\n');
         return sendReply(reply);
     }
 
     // ------------------------------------------
-    // 2. INTENT: الاستعلام عن النواقص بشكل عام
+    // INTENT: النواقص
     // ------------------------------------------
-    if (normText.match(/ايه الناقص|المنتجات الناقصه|ايه النواقص|ايه اللي خلصان/)) {
+    if (normText.match(/ايه الناقص|المنتجات الناقصه|ايه النواقص|ايه اللي خلصان|اللي ناقص|النواقص|اللي محتاجه/)) {
         const shortages = products.filter(p => p.qty < p.targetQty);
-        if (shortages.length > 0) {
-            reply = "المنتجات الناقصة هي:\n" + shortages.map(p => `🔴 ${p.name} — ناقص ${p.targetQty - p.qty}`).join('\n');
-        } else {
-            reply = "لا توجد منتجات ناقصة، المخزون مكتمل بالكامل!";
-        }
+        if (shortages.length === 0) return sendReply('✅ المخزون مكتمل! لا يوجد نواقص.');
+        reply = `🔴 المنتجات الناقصة (${shortages.length}):\n\n` +
+            shortages.map(p => {
+                const miss = p.targetQty - p.qty;
+                return `${p.qty === 0 ? '❌' : '🔴'} ${p.name} — ناقص ${miss} (موجود ${p.qty}/${p.targetQty})`;
+            }).join('\n');
         return sendReply(reply);
     }
 
     // ------------------------------------------
-    // 💡 منطق الذاكرة (Memory Logic) الذكي
+    // INTENT: بحث عن منتج
     // ------------------------------------------
-    // ------------------------------------------
-    // 💡 منطق الذاكرة (Memory Logic) الذكي
-    // ------------------------------------------
-    let usedMemory = false;
+    if (normText.match(/ابحث عن|بحث|فين|وين|هل عندك|هل في/) && !product) {
+        const searchTerm = normText
+            .replace(/ابحث عن|ابحث|بحث عن|بحث|فين|وين|هل عندك|هل في|عندي|موجود/g, '').trim();
+        if (searchTerm.length > 1) {
+            const found = products.filter(p => normalizeText(p.name).includes(searchTerm));
+            if (found.length > 0) {
+                return sendReply('🔍 النتائج:\n' + found.map(p => `• ${p.name} — الكمية: ${p.qty}`).join('\n'));
+            } else {
+                return sendReply(`🔍 لم أجد "${searchTerm}" في المخزون.`);
+            }
+        }
+    }
+
+    let reply = 'عفواً، لم أفهم الأمر.';
+
 
     if (product) {
         // تحديث الذاكرة بالمنتج الجديد
@@ -557,7 +657,7 @@ function processAssistantCommand(text) {
     // ------------------------------------------
     // 2.5 INTENT: ضبط وتعديل الكمية مباشرة (SET QUANTITY)
     // ------------------------------------------
-    if (normText.match(/خلي|خليه|خليهم|اضبط|ظبط|عدل الكميه|الكميه بقت/) && amount !== null && !normText.includes('سعر')) {
+    if (normText.match(/خلي|خليه|خليهم|اضبط|ظبط|عدل الكميه|الكميه بقت|اجعلها|اجعله/) && amount !== null && !normText.includes('سعر') && !normText.match(/الحد|الحد المطلوب|الهدف|التارجت/)) {
         const oldQty = product.qty;
         product.qty = amount;
         saveProducts(products);
@@ -566,16 +666,28 @@ function processAssistantCommand(text) {
     }
 
     // ------------------------------------------
+    // 2.6 INTENT: تغيير الحد المطلوب (TARGET QTY)
+    // ------------------------------------------
+    if (normText.match(/الحد|الحد المطلوب|الهدف|التارجت|المطلوب يكون|الكميه المطلوبه/) && amount !== null) {
+        const oldTarget = product.targetQty;
+        product.targetQty = amount;
+        saveProducts(products);
+        logAction(`🎯 قام المساعد بتغيير الحد المطلوب لـ "${product.name}" من ${oldTarget} إلى ${amount} قطعة.`);
+        const missing = Math.max(product.targetQty - product.qty, 0);
+        return sendReply(memoryHint + `✅ تم تغيير الحد المطلوب لـ ${product.name} إلى ${amount} قطعة.\nالموجود حالياً: ${product.qty} | الناقص: ${missing}`);
+    }
+
+    // ------------------------------------------
     // 3. INTENT: تعديل السعر
     // ------------------------------------------
-    if (normText.includes('سعر') && amount !== null && !normText.match(/كام|كم|بكام/)) {
+    if ((normText.includes('سعر') || normText.match(/غير سعره|بدل سعره|سعره يبقي/)) && amount !== null && !normText.match(/كام|كم|بكام/)) {
         let oldPrice = product.price || 0;
-        if (normText.match(/زود|ضيف|اضف|حط/)) {
+        if (normText.match(/زود|ضيف|اضف|حط|رفع|ارفع/)) {
             product.price = oldPrice + amount;
             saveProducts(products);
             logAction(`💰 قام المساعد بزيادة سعر "${product.name}" من ${oldPrice} إلى ${product.price} جنيه.`);
             return sendReply(memoryHint + `تم تزويد السعر، وأصبح سعر ${product.name} دلوقتي ${product.price} جنيه.`);
-        } else if (normText.match(/نقص|قلل/)) {
+        } else if (normText.match(/نقص|قلل|خفض/)) {
             product.price = Math.max(oldPrice - amount, 0);
             saveProducts(products);
             logAction(`💰 قام المساعد بتقليل سعر "${product.name}" من ${oldPrice} إلى ${product.price} جنيه.`);
@@ -591,19 +703,19 @@ function processAssistantCommand(text) {
     // ------------------------------------------
     // 4. INTENT: الاستعلام عن السعر
     // ------------------------------------------
-    if (normText.includes('سعر') || normText.includes('بكام')) {
-        return sendReply(memoryHint + `سعر ${product.name} هو ${product.price || 'غير محدد'} جنيه.`);
+    if (normText.match(/سعر|بكام|سعره|تمنه|بتاع بكام/)) {
+        return sendReply(memoryHint + `سعر ${product.name} هو ${product.price ? product.price + ' جنيه' : 'غير محدد بعد'}.`);
     }
 
     // ------------------------------------------
     // 5. INTENT: زيادة الكمية (ADD)
     // ------------------------------------------
-    if (normText.match(/زود|ضيف|اضف|حط/)) {
+    if (normText.match(/زود|ضيف|اضف|حط|وصل|جاء|اشتريت|استلمت|وصلت/)) {
         if (amount) {
             product.qty += amount;
             saveProducts(products);
             logAction(`➕ قام المساعد بإضافة ${amount} قطعة إلى "${product.name}". (الإجمالي: ${product.qty})`);
-            return sendReply(memoryHint + `تم إضافة ${amount} لـ ${product.name}.\nالكمية أصبحت ${product.qty}.`);
+            return sendReply(memoryHint + `✅ تم إضافة ${amount} لـ ${product.name}.\nالكمية أصبحت ${product.qty} من ${product.targetQty}.`);
         } else {
             return sendReply(memoryHint + `عايز تزود كام قطعة من ${product.name}؟ قول الرقم.`);
         }
@@ -612,21 +724,22 @@ function processAssistantCommand(text) {
     // ------------------------------------------
     // 6. INTENT: خصم الكمية (REMOVE)
     // ------------------------------------------
-    if (normText.match(/نقص|قلل|بعت|صرفت|بيع/)) {
+    if (normText.match(/نقص|قلل|بعت|صرفت|بيع|خصم|استخدمت|اخدت|طلع/)) {
         if (amount) {
             if (product.qty >= amount) {
                 product.qty -= amount;
-                saveProducts(products); 
+                saveProducts(products);
                 const missing = Math.max(product.targetQty - product.qty, 0);
                 logAction(`➖ قام المساعد بصرف ${amount} قطعة من "${product.name}". (المتبقي: ${product.qty})`);
-                return sendReply(memoryHint + `تم خصم ${amount} من ${product.name}.\nالكمية أصبحت ${product.qty} من ${product.targetQty}، والناقص ${missing}.`);
+                return sendReply(memoryHint + `✅ تم خصم ${amount} من ${product.name}.\nالكمية أصبحت ${product.qty} من ${product.targetQty}، والناقص ${missing}.`);
             } else {
-                return sendReply(memoryHint + `مش ممكن تخصم ${amount}. الموجود حاليًا من ${product.name} هو ${product.qty} فقط.`);
+                return sendReply(memoryHint + `⚠️ مش ممكن تخصم ${amount}. الموجود حاليًا من ${product.name} هو ${product.qty} فقط.`);
             }
         } else {
             return sendReply(memoryHint + `عايز تنقص كام قطعة من ${product.name}؟ قول الرقم.`);
         }
     }
+
 
     // ------------------------------------------
     // 7. INTENT: حذف منتج (DELETE)
