@@ -119,8 +119,59 @@ tabs.forEach(tab => {
         tabContents.forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(tab.dataset.target).classList.add('active');
+        if (tab.dataset.target === 'inventory') {
+            if (searchInput) searchInput.placeholder = 'ابحث عن منتج...';
+            renderTable(getProducts());
+        }
     });
 });
+
+// التنقل لصفحة المنتجات عند الضغط على كروت الإحصائيات (متوفرة / ناقصة / الإجمالي)
+function openInventoryWithFilter(filterType = 'all') {
+    tabs.forEach(t => {
+        if (t.dataset.target === 'inventory') {
+            t.classList.add('active');
+        } else {
+            t.classList.remove('active');
+        }
+    });
+    tabContents.forEach(c => {
+        if (c.id === 'inventory') {
+            c.classList.add('active');
+        } else {
+            c.classList.remove('active');
+        }
+    });
+
+    const products = getProducts();
+    let filtered = products;
+
+    if (filterType === 'available') {
+        filtered = products.filter(p => p.qty > 0);
+        if (searchInput) searchInput.placeholder = '🔍 المنتجات المتوفرة فقط...';
+    } else if (filterType === 'shortage') {
+        filtered = products.filter(p => p.qty < p.targetQty);
+        if (searchInput) searchInput.placeholder = '🔍 المنتجات الناقصة فقط...';
+    } else {
+        if (searchInput) searchInput.placeholder = 'ابحث عن منتج...';
+    }
+
+    if (searchInput) searchInput.value = '';
+    renderTable(filtered);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const statCards = document.querySelectorAll('.stat-card');
+if (statCards.length >= 4) {
+    // كارت إجمالي المنتجات
+    statCards[0].addEventListener('click', () => openInventoryWithFilter('all'));
+    // كارت المنتجات المتوفرة
+    statCards[1].addEventListener('click', () => openInventoryWithFilter('available'));
+    // كارت المنتجات الناقصة (خلصانة)
+    statCards[2].addEventListener('click', () => openInventoryWithFilter('shortage'));
+    // كارت قيمة المخزون
+    statCards[3].addEventListener('click', () => openInventoryWithFilter('all'));
+}
 
 // ==========================================
 // 3. UI Render Functions
