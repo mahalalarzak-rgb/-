@@ -832,7 +832,15 @@ if (SpeechRecognition) {
         chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
 
         if (event.error === 'not-allowed' || event.error === 'permission-denied') {
-            addMessage('❌ تم رفض صلاحية المايكروفون.\nيرجى:\n1. السماح للمتصفح باستخدام المايك من الإعدادات\n2. أو شغل الموقع من ملف "تشغيل_الموقع.bat"', false);
+            addMessage(
+                '❌ تم رفض صلاحية المايكروفون.\n\n' +
+                'لتفعيله على الموبايل:\n' +
+                '1️⃣ اضغط على أيقونة 🔒 أو ⓘ بجانب الرابط\n' +
+                '2️⃣ اختر "الأذونات" أو "Permissions"\n' +
+                '3️⃣ فعّل "الميكروفون" أو "Microphone"\n' +
+                '4️⃣ أعد تحميل الصفحة وحاول مرة أخرى',
+                false
+            );
         } else if (event.error === 'no-speech') {
             addMessage('🎤 لم أسمع شيئاً، حاول تكلم بصوت أعلى.', false);
         } else if (event.error === 'network') {
@@ -850,38 +858,33 @@ if (SpeechRecognition) {
         chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
     };
 
-    micBtn.addEventListener('click', async () => {
+    micBtn.addEventListener('click', () => {
         // افتح الشات لو مقفول
         if (chatbotBody.classList.contains('hidden')) {
             chatbotBody.classList.remove('hidden');
             toggleChatBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
         }
 
-        // منع التشغيل المزدوج
+        // إيقاف التسجيل لو كان شغال
         if (isRecognitionActive) {
             recognition.stop();
             return;
         }
 
-        // لو فاتح ملف مباشرة (file://)
+        // لو فاتح ملف مباشرة (file://) — مش هيشتغل
         if (window.location.protocol === 'file:') {
-            addMessage('⚠️ المايكروفون لا يعمل عند فتح الملف مباشرة من المجلد.\n\nالحل: شغل الموقع بالضغط على ملف "تشغيل_الموقع.bat" الموجود في نفس المجلد.', false);
-            return; // لا تحاول تشغيل المايك أصلاً
-        }
-
-        // طلب صلاحية المايك صراحةً قبل بدء التسجيل
-        try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (permErr) {
-            addMessage('❌ تم رفض صلاحية المايكروفون.\nافتح إعدادات المتصفح وامنح الإذن لهذا الموقع.', false);
+            addMessage('⚠️ المايكروفون لا يعمل عند فتح الملف مباشرة.\n\nالحل: شغل الموقع من ملف "تشغيل_الموقع.bat" الموجود في نفس المجلد.', false);
             return;
         }
 
-        // ابدأ التسجيل
+        // ابدأ التسجيل مباشرة — SpeechRecognition يطلب الإذن بنفسه
         try {
             recognition.start();
-        } catch (startErr) {
-            addMessage('⚠️ تعذر تشغيل المايكروفون. حاول مرة أخرى.', false);
+        } catch (e) {
+            // لو المايك بيشتغل بالفعل (double-click)
+            if (e.name !== 'InvalidStateError') {
+                addMessage('⚠️ تعذر تشغيل المايكروفون. حاول مرة أخرى.', false);
+            }
         }
     });
 } else {
