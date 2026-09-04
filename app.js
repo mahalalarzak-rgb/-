@@ -308,19 +308,86 @@ addForm.addEventListener('submit', (e) => {
     addMessage(`تم إضافة منتج جديد: ${name} بنجاح!`, false);
 });
 
+// ==========================================
+// 4.1 Edit Product Modal Logic
+// ==========================================
+const editModal = document.getElementById('edit-modal');
+const editForm = document.getElementById('edit-form');
+const closeEditModalBtn = document.getElementById('close-edit-modal');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+function closeEditModal() {
+    if (editModal) {
+        editModal.classList.add('hidden');
+    }
+}
+
+if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', closeEditModal);
+if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+
+if (editModal) {
+    editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeEditModal();
+    });
+}
+
 window.editQty = function(id) {
     let products = getProducts();
     const item = products.find(i => i.id === id);
-    if(item) {
-        const newQty = prompt(`تعديل الكمية الحالية لـ "${item.name}":`, item.qty);
-        if(newQty !== null && !isNaN(newQty)) {
-            const oldQty = item.qty;
-            item.qty = parseInt(newQty);
-            saveProducts(products);
-            logAction(`✏️ تم تعديل كمية "${item.name}" يدوياً من ${oldQty} إلى ${item.qty}.`);
-        }
+    if (!item) return;
+
+    document.getElementById('edit-prod-id').value = item.id;
+    document.getElementById('edit-prod-name').value = item.name;
+    document.getElementById('edit-prod-qty').value = item.qty;
+    document.getElementById('edit-prod-target-qty').value = item.targetQty;
+    document.getElementById('edit-prod-price').value = item.price !== null && item.price !== undefined ? item.price : '';
+
+    if (editModal) {
+        editModal.classList.remove('hidden');
     }
 };
+
+if (editForm) {
+    editForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = parseInt(document.getElementById('edit-prod-id').value);
+        const name = document.getElementById('edit-prod-name').value.trim();
+        const qty = parseInt(document.getElementById('edit-prod-qty').value);
+        const targetQty = parseInt(document.getElementById('edit-prod-target-qty').value);
+        const priceVal = document.getElementById('edit-prod-price').value;
+        const price = priceVal !== '' ? parseInt(priceVal) : null;
+
+        let products = getProducts();
+        const itemIndex = products.findIndex(p => p.id === id);
+        if (itemIndex !== -1) {
+            const oldName = products[itemIndex].name;
+            const oldQty = products[itemIndex].qty;
+            const oldTarget = products[itemIndex].targetQty;
+            const oldPrice = products[itemIndex].price;
+
+            products[itemIndex] = {
+                ...products[itemIndex],
+                name,
+                qty,
+                targetQty,
+                price
+            };
+
+            saveProducts(products);
+            
+            let changes = [];
+            if (oldName !== name) changes.push(`الاسم: "${oldName}" ➔ "${name}"`);
+            if (oldQty !== qty) changes.push(`الكمية: ${oldQty} ➔ ${qty}`);
+            if (oldTarget !== targetQty) changes.push(`الحد: ${oldTarget} ➔ ${targetQty}`);
+            if (oldPrice !== price) changes.push(`السعر: ${oldPrice || 0} ج ➔ ${price || 0} ج`);
+
+            const changeText = changes.length > 0 ? changes.join('، ') : 'تعديل البيانات';
+            logAction(`✏️ تم تعديل بيانات "${name}": ${changeText}.`);
+
+            closeEditModal();
+        }
+    });
+}
 
 window.deleteItem = function(id) {
     if(confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
