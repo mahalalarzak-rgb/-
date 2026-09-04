@@ -697,8 +697,10 @@ if (SpeechRecognition) {
     recognition.lang = 'ar-EG';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    let isRecognitionActive = false;
 
     recognition.onstart = function() {
+        isRecognitionActive = true;
         micBtn.classList.add('recording');
         chatInput.placeholder = 'جاري الاستماع...';
     };
@@ -712,30 +714,69 @@ if (SpeechRecognition) {
 
     recognition.onerror = function(event) {
         console.error('Speech recognition error', event.error);
-        if(event.error === 'not-allowed') {
-            addMessage('❌ المايك مقفول بسبب الحماية. شغل الموقع من ملف "تشغيل_الموقع.bat".', false, true);
+        micBtn.classList.remove('recording');
+        isRecognitionActive = false;
+        chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
+
+        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+            addMessage('❌ تم رفض صلاحية المايكروفون.\nيرجى:\n1. السماح للمتصفح باستخدام المايك من الإعدادات\n2. أو شغل الموقع من ملف "تشغيل_الموقع.bat"', false);
+        } else if (event.error === 'no-speech') {
+            addMessage('🎤 لم أسمع شيئاً، حاول تكلم بصوت أعلى.', false);
+        } else if (event.error === 'network') {
+            addMessage('📶 المايك يحتاج اتصال إنترنت ليشتغل. تأكد من الاتصال.', false);
+        } else if (event.error === 'audio-capture') {
+            addMessage('🎙️ مش لاقي مايكروفون على الجهاز. تأكد من توصيل المايك.', false);
         } else {
-            addMessage('حدث خطأ في المايك، يرجى المحاولة مرة أخرى.', false, true);
+            addMessage('⚠️ مشكلة في المايكروفون: ' + event.error + '. حاول تاني.', false);
         }
     };
 
     recognition.onend = function() {
+        isRecognitionActive = false;
         micBtn.classList.remove('recording');
         chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
     };
 
-    micBtn.addEventListener('click', () => {
-        if(chatbotBody.classList.contains('hidden')) {
-            toggleChatBtn.click();
+    micBtn.addEventListener('click', async () => {
+        // افتح الشات لو مقفول
+        if (chatbotBody.classList.contains('hidden')) {
+            chatbotBody.classList.remove('hidden');
+            toggleChatBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
         }
-        if(window.location.protocol === 'file:') {
-            addMessage('⚠️ تنبيه: المايك مش هيشتغل وإنت فاتح الملف مباشرة. استخدم "تشغيل_الموقع.bat".', false, true);
+
+        // منع التشغيل المزدوج
+        if (isRecognitionActive) {
+            recognition.stop();
+            return;
         }
-        recognition.start();
+
+        // لو فاتح ملف مباشرة (file://)
+        if (window.location.protocol === 'file:') {
+            addMessage('⚠️ المايكروفون لا يعمل عند فتح الملف مباشرة من المجلد.\n\nالحل: شغل الموقع بالضغط على ملف "تشغيل_الموقع.bat" الموجود في نفس المجلد.', false);
+            return; // لا تحاول تشغيل المايك أصلاً
+        }
+
+        // طلب صلاحية المايك صراحةً قبل بدء التسجيل
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (permErr) {
+            addMessage('❌ تم رفض صلاحية المايكروفون.\nافتح إعدادات المتصفح وامنح الإذن لهذا الموقع.', false);
+            return;
+        }
+
+        // ابدأ التسجيل
+        try {
+            recognition.start();
+        } catch (startErr) {
+            addMessage('⚠️ تعذر تشغيل المايكروفون. حاول مرة أخرى.', false);
+        }
     });
 } else {
-    micBtn.style.display = 'none';
-    console.log("Speech Recognition API not supported in this browser.");
+    // المتصفح لا يدعم الـ Speech Recognition
+    if (micBtn) {
+        micBtn.style.display = 'none';
+    }
+    console.log('Speech Recognition API not supported in this browser.');
 }
 
 // Init Application
