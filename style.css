@@ -256,6 +256,7 @@ h2 i {
     cursor: default;
 }
 
+/* الدائرة الزخرفية خلف الكلام — z-index: 0 */
 .stat-card::after {
     content: '';
     position: absolute;
@@ -264,11 +265,19 @@ h2 i {
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.07);
     transition: all 0.4s ease;
+    z-index: 0;
+    pointer-events: none;
 }
 
-.stat-card:hover::after { transform: scale(2); }
+/* الكل داخل الكارت فوق الدائرة */
+.stat-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card:hover::after { transform: scale(2.2); opacity: 0.5; }
 
 /* كارت الإجمالي */
 .stat-card:nth-child(1) {
@@ -338,7 +347,7 @@ h2 i {
 
 .shortage-card {
     background: #ffffff;
-    padding: 16px 18px;
+    padding: 16px 20px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
     border-right: 5px solid var(--warning-color);
@@ -346,29 +355,36 @@ h2 i {
     animation: slideUp 0.3s ease-out backwards;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
 }
 
 .shortage-card:hover {
     box-shadow: var(--shadow-md);
-    transform: translateX(-3px);
+    transform: translateX(-4px);
+    background: #fafffe;
+    border-right-width: 6px;
 }
 
 .shortage-card.empty {
     border-right-color: var(--danger-color);
-    background: #fff5f5;
+    background: #fff8f6;
     animation: slideUp 0.3s ease-out backwards, pulseDanger 2.5s infinite;
+}
+
+.shortage-card.empty:hover {
+    background: #fff1ee;
 }
 
 .shortage-card h4 {
     font-size: 1.05rem;
-    color: var(--primary-dark);
+    color: #0f3d3e;
     font-weight: 800;
+    line-height: 1.4;
 }
 
 .shortage-card p {
     font-size: 0.9rem;
-    color: #64748b;
+    color: #4a7a72;
     font-weight: 600;
 }
 
@@ -436,25 +452,26 @@ th {
 }
 
 tbody tr {
-    transition: all 0.2s ease;
+    transition: background 0.2s ease;
 }
 tbody tr:hover {
-    background: linear-gradient(135deg, #f0faf8, #e6f5f3);
+    background: #f0faf8;
 }
 tbody tr:last-child td { border-bottom: none; }
 
 .status-badge {
-    padding: 5px 12px;
+    padding: 5px 14px;
     border-radius: 50px;
-    font-size: 0.82rem;
+    font-size: 0.83rem;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    letter-spacing: 0.2px;
 }
-.status-available { background: #ccf0eb; color: #0d5c52; }
-.status-warning { background: #fdf3d0; color: #7a5200; }
-.status-empty { background: #fde8e0; color: #9c2d0f; }
+.status-available { background: #d0f5ee; color: #0b5e52; }
+.status-warning   { background: #fdf3d0; color: #7a5200; }
+.status-empty     { background: #fde0d8; color: #8c2500; }
 
 .action-btn {
     background: none;
