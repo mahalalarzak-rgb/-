@@ -681,18 +681,28 @@ function processAssistantCommand(text) {
         let foundTarget = 10;
 
         const numbers = parseArabicNumbers(text);
-        if (numbers && numbers.length > 0) {
-            foundQty = numbers[0];
-            if (numbers.length > 1) {
-                foundPrice = numbers[1];
-            }
-            rawName = rawName.replace(/\d+/g, '')
-                             .replace(/[٠١٢٣٤٥٦٧٨٩]/g, '')
-                             .replace(/كميه|كمية|بكمية|بكميه|عدد|قطع|قطعه|سعر|بسعر|جنيه|جنيها|حته|حبات/g, '')
-                             .replace(/(?:^|\s+)(?:اسمه|اسمها|اسم)(?:\s+|$)/gi, ' ')
-                             .trim();
+        // التحقق من وجود كلمات صريحة تدل على الكمية أو السعر
+        const pricePatternMatch = text.match(/(?:بسعر|سعر|سعره)\s*[:=]?\s*(\d+)/i) || text.match(/(\d+)\s*(?:جنيه|ج\b)/i);
+        const qtyPatternMatch = text.match(/(?:كمية|كميه|بكمية|بكميه|عدد|قطع|قطعه|حبات|حته)\s*[:=]?\s*(\d+)/i);
+
+        if (pricePatternMatch) {
+            foundPrice = parseInt(pricePatternMatch[1]);
+            rawName = rawName.replace(pricePatternMatch[0], ' ');
         }
-        rawName = rawName.replace(/^(?:اسمه|اسمها|اسم)\s+/gi, '').trim();
+        if (qtyPatternMatch) {
+            foundQty = parseInt(qtyPatternMatch[1]);
+            rawName = rawName.replace(qtyPatternMatch[0], ' ');
+        } else if (numbers && numbers.length > 0 && !rawName.match(/\b(?:مسمار|فولت|طرف|بوصة|بوصه|ملي|ملليمتر|خط|شمعة|شمعه|حصان|وات|امبير)\b/i)) {
+            // لو مفيش لفظ تمييز يخص المنتج، وأول رقم جاي في الآخر
+            const trailingNumMatch = rawName.match(/\s+(\d+)\s*$/);
+            if (trailingNumMatch) {
+                foundQty = parseInt(trailingNumMatch[1]);
+                rawName = rawName.replace(/\s+\d+\s*$/, ' ');
+            }
+        }
+        rawName = rawName.replace(/^(?:اسمه|اسمها|اسم)\s+/gi, '')
+                         .replace(/\s+/g, ' ')
+                         .trim();
 
         if (rawName.length >= 2) {
             const newProd = {
@@ -1117,73 +1127,90 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
 } else if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
     recognition.lang = isIOS ? 'ar-SA' : 'ar-EG';
-    recognition.interimResults = true; // كتابة الكلمات فور التحدث بها
+    recognition.interimResults = true; // كتابة الكلمات فور التحدث بها لحظياً
     recognition.maxAlternatives = 1;
-    recognition.continuous = !isIOS; // تفعيل النمط المستمر على Android والكمبيوتر
+    recognition.continuous = true;     // الاستماع المستمر حتى ينتهي المستخدم من كلامه
 
     let shouldKeepListening = false;
     let lastProcessedText = '';
     let speechSilenceTimeout = null;
-    let accumulatedSpeech = '';
+    let fullSessionTranscript = '';
 
     function dispatchAccumulatedSpeech() {
         if (speechSilenceTimeout) {
             clearTimeout(speechSilenceTimeout);
             speechSilenceTimeout = null;
         }
-        const textToProcess = (accumulatedSpeech || chatInput.value || '').trim();
-        accumulatedSpeech = '';
+
+        const textToProcess = (fullSessionTranscript || chatInput.value || '').trim();
+        fullSessionTranscript = '';
+
         if (textToProcess && textToProcess !== lastProcessedText) {
             lastProcessedText = textToProcess;
             chatInput.value = textToProcess;
+            chatInput.placeholder = 'جاري تنفيذ الأمر...';
             processAssistantCommand(textToProcess);
             setTimeout(() => {
-                if (chatInput) chatInput.value = '';
-            }, 100);
+                if (chatInput) {
+                    chatInput.value = '';
+                    if (shouldKeepListening) {
+                        chatInput.placeholder = '🎙️ سامعك.. كمل كلامك أو قول الأمر اللي بعده';
+                    } else {
+                        chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
+                    }
+                }
+            }, 250);
         }
     }
 
     recognition.onstart = function() {
         micBtn.classList.add('recording');
-        chatInput.placeholder = '🎙️ جاري الاستماع المستمر.. أضف منتجاتك براحتك!';
+        chatInput.placeholder = '🎙️ سامعك.. اتكلم براحتك وأنا هسمعك للآخر';
     };
 
     recognition.onresult = function(event) {
         if (!event.results || event.results.length === 0) return;
 
-        // تجميع كل العبارات المتتالية في جملة واحدة كاملة
-        let fullTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-            fullTranscript += event.results[i][0].transcript + ' ';
+        // تجميع كل الكلام (المؤكد واللحظي) من جلسة الاستماع الحالية
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+                interimTranscript += event.results[i][0].transcript + ' ';
+            }
         }
-        fullTranscript = fullTranscript.trim();
 
-        if (fullTranscript) {
-            accumulatedSpeech = fullTranscript;
-            chatInput.value = fullTranscript;
+        const currentLiveText = (finalTranscript + interimTranscript).replace(/\s+/g, ' ').trim();
 
-            // إعطاء مهلة للمستخدم حتى ينهي جملته بدون تقطيع
+        if (currentLiveText) {
+            fullSessionTranscript = currentLiveText;
+            // كتابة ما يسمعه المايك فوراً أمام المستخدم حتى يراه بعينه
+            chatInput.value = currentLiveText;
+
+            // إعادة ضبط مؤقت الصمت: لا ينفذ الأمر إلا بعد أن يسكت المستخدم لمدة ثانية كاملة (1000ms)
             if (speechSilenceTimeout) {
                 clearTimeout(speechSilenceTimeout);
             }
             speechSilenceTimeout = setTimeout(() => {
                 dispatchAccumulatedSpeech();
-            }, 1400); // 1.4 ثانية صمت تعني انتهاء الجملة بالكامل
+            }, 1000); // ينتظر ثانية واحدة بعد السكوت
         }
     };
 
     recognition.onerror = function(event) {
-        console.error('Speech recognition error', event.error);
+        console.warn('Speech recognition status/error:', event.error);
         if (event.error === 'no-speech') {
-            // لا نوقف المايك عند الصمت، بل يواصل العمل
+            // استمر في الاستماع حتى لو سكت المستخدم لفترة
             return;
         }
 
-        shouldKeepListening = false;
-        micBtn.classList.remove('recording');
-        chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
-
         if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+            shouldKeepListening = false;
+            micBtn.classList.remove('recording');
+            chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
             addMessage(
                 '❌ تم رفض صلاحية المايكروفون.\n\n' +
                 'لتفعيله على الموبايل:\n' +
@@ -1195,23 +1222,21 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
             );
         } else if (event.error === 'network') {
             addMessage('📶 المايك يحتاج اتصال إنترنت ليشتغل. تأكد من الاتصال.', false);
-        } else if (event.error === 'audio-capture') {
-            addMessage('🎙️ مش لاقي مايكروفون على الجهاز. تأكد من توصيل المايك.', false);
         }
     };
 
     recognition.onend = function() {
-        // إذا كان هناك كلام معلق لم ينفذ بعد
-        if (accumulatedSpeech) {
+        // إذا كان هناك كلام معلق، نفذه فوراً
+        if (fullSessionTranscript) {
             dispatchAccumulatedSpeech();
         }
 
-        // إذا كان المستخدم قد فعل المايك المستمر، أعد تشغيله تلقائياً بمرونة!
+        // إذا كان وضع الاستماع مفعلاً، يتم إعادة تشغيل المايك فوراً بدون مقاطعة المستخدم
         if (shouldKeepListening) {
             try {
                 recognition.start();
             } catch (e) {
-                // Ignore if already active
+                // تجاهل إذا كان يعمل بالفعل
             }
         } else {
             micBtn.classList.remove('recording');
@@ -1226,25 +1251,24 @@ if ((isChromeOnIOS || isFirefoxOnIOS) && micBtn) {
             toggleChatBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
         }
 
-        // لو فاتح ملف مباشرة (file://) — مش هيشتغل
         if (window.location.protocol === 'file:') {
             addMessage('⚠️ المايكروفون لا يعمل عند فتح الملف مباشرة.\n\nالحل: شغل الموقع من ملف "تشغيل_الموقع.bat" الموجود في نفس المجلد.', false);
             return;
         }
 
         if (shouldKeepListening) {
-            // إيقاف المايك عند الضغط عليه مرة أخرى
+            // إيقاف يدوي عند الضغط على زر المايك مرة أخرى
             shouldKeepListening = false;
             dispatchAccumulatedSpeech();
             try { recognition.stop(); } catch(e) {}
             micBtn.classList.remove('recording');
             chatInput.placeholder = 'اكتب سؤالك أو أمرك هنا...';
-            addMessage('🎙️ تم إيقاف الاستماع المستمر للمايكروفون.', false);
+            addMessage('🎙️ تم إيقاف الاستماع للمايكروفون.', false);
         } else {
-            // تشغيل وضع المايك المستمر
+            // بدء الاستماع
             shouldKeepListening = true;
             lastProcessedText = '';
-            accumulatedSpeech = '';
+            fullSessionTranscript = '';
             try {
                 recognition.start();
             } catch (e) {
