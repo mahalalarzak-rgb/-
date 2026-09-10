@@ -146,45 +146,56 @@ nav {
 }
 
 .tab-btn {
-    background: rgba(255,255,255,0.08);
-    color: #cce8e5;
-    border: 1px solid rgba(42,157,143,0.25);
-    padding: 9px 22px;
-    border-radius: 50px;
+    background: transparent;
+    color: #e0f2fe;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    padding: 8px 20px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 700;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     position: relative;
-    overflow: hidden;
 }
-
-.tab-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #2a9d8f, #e9c46a);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: inherit;
-}
-
-.tab-btn span, .tab-btn i { position: relative; z-index: 1; }
 
 .tab-btn i {
-    margin-left: 8px;
+    margin-left: 6px;
     color: #7ec8c2;
-    transition: color 0.3s ease;
+    transition: color 0.25s ease;
 }
 
-.tab-btn:hover::before, .tab-btn.active::before { opacity: 1; }
-.tab-btn:hover, .tab-btn.active {
-    color: #0f3d3e;
-    border-color: transparent;
-    box-shadow: 0 4px 16px rgba(42,157,143,0.4);
-    transform: translateY(-2px);
+.tab-btn:hover {
+    background: transparent;
+    color: #ffffff;
+    border-color: var(--primary-color);
+    box-shadow: none !important;
+    transform: translateY(-1px);
 }
-.tab-btn:hover i, .tab-btn.active i { color: #0f3d3e; }
+
+.tab-btn:hover i {
+    color: var(--primary-color);
+}
+
+.tab-btn.active {
+    background: transparent;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    border-width: 2px;
+    font-weight: 800;
+    box-shadow: none !important;
+    transform: none;
+}
+
+.tab-btn.active i {
+    color: var(--primary-color);
+}
 
 /* ===========================================
    MAIN CONTENT
